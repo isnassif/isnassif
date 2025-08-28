@@ -20,6 +20,3 @@ Me chamo Ikhlas Santos Nassif, tenho 19 anos e sou natural da Bahia. Concluí o 
         />
     </a>
 </p>
-
----
-
