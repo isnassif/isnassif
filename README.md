@@ -39,19 +39,17 @@ A Unidade de Controle, é implementada no módulo control_unity e funciona como 
 </ul>
 
 <h3>Fluxo Operacional</h3>
-<ol>
-  <li><strong>Reset e Configuração Inicial</strong>  
-      O sistema inicia no estado <code>RESET</code>, aguardando o sinal <code>vga_reset</code>. Nessa fase, são configurados os fatores de escala de acordo com a entrada do usuário.</li>
-  <li><strong>Leitura Sequencial da ROM</strong>  
-      O endereço <code>rom_addr</code> é incrementado, varrendo a imagem original de 160×120 pixels. Cada pixel lido é enviado ao módulo de algoritmo escolhido.</li>
-  <li><strong>Processamento pelo Algoritmo</strong>  
-      Dependendo do OpCode, o pixel é replicado, reduzido, interpolado ou copiado diretamente.  
-      Exemplo: no modo replicação ×2, cada pixel da ROM gera 4 pixels consecutivos na RAM.</li>
-  <li><strong>Escrita no Framebuffer</strong>  
-      O resultado é armazenado na RAM Dual-Port na posição calculada por <code>addr_reg</code>. O sinal <code>ram_wren</code> habilita a escrita em ciclos válidos.</li>
-  <li><strong>Exibição pelo VGA Driver</strong>  
-      Em paralelo, o <code>vga_driver</code> lê continuamente a RAM pela porta de leitura, gerando os sinais VGA (hsync, vsync, RGB) em 25&nbsp;MHz.</li>
-</ol>
+<p>
+    Nessa seção, falaremos sobre toda a parte operacional do funcionamento da Unidade de Controle, que segue uma sequência bem definida de etapas. Inicialmente, assim que o sinal vga_reset é acionado, o sistema entra no estado de RESET. Nesse momento, são realizados os ajustes iniciais, incluindo a configuração dos fatores de escala de acordo com a opção escolhida pelo usuário por meio das chaves de entrada. Com a configuração concluída, o sistema passa para a fase de leitura sequencial da ROM. Aqui, o endereço rom_addr é continuamente incrementado, percorrendo toda a imagem original armazenada, que possui resolução de 160×120 pixels. Cada pixel lido é então encaminhado para o módulo de algoritmo responsável pelo redimensionamento.
+</p>
+
+<p>
+    A etapa de redimensionamento é basicamente é o processamento do pixel pelo algoritmo selecionado, vale ressaltar que a escolha do modo de operação depende do código de controle gerado a partir das chaves. Assim, o pixel pode ser replicado, reduzido, interpolado ou simplesmente copiado de forma direta - Por exemplo, no modo de replicação ×2, cada pixel proveniente da ROM é expandido em quatro pixels consecutivos que serão gravados no framebuffer- Após o processamento, leitura e aplicação dos algoritmos, ocorre a escrita na RAM dual-port, que funciona como framebuffer. A posição de memória correta é calculada a partir do registrador de endereço addr_reg, levando em conta tanto a ampliação ou redução da imagem quanto os deslocamentos necessários para centralização. O sinal de controle ram_wren garante que a escrita ocorra apenas em ciclos válidos, evitando sobreposição ou perda de dados.
+</p>
+
+<p>
+    A unidade de controle também controla o módulo vga_drive, que será explicado posteriormente. Esse fluxo coordenado garante que cada etapa — desde a leitura da ROM até a exibição final pelo VGA — seja sincronizada e controlada pela Unidade de Controle, assegurando o funcionamento estável do sistema.
+</p>
 
 <h3>Integração com os Demais Blocos</h3>
 <p>
