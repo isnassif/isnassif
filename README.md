@@ -23,42 +23,32 @@ Me chamo Ikhlas Santos Nassif, tenho 19 anos e sou natural da Bahia. Concluí o 
 
 <h2 id="ula">Unidade Lógica e Algorítmica (ULA)</h2>
 <p>
-O módulo <code>ULA</code> é responsável por integrar e coordenar diferentes algoritmos de processamento de imagens
-(replica&ccedil;&atilde;o, decima&ccedil;&atilde;o, zoom por vizinho mais pr&oacute;ximo, m&eacute;dia de blocos e c&oacute;pia direta),
-atuando como um seletor inteligente que direciona os dados lidos da ROM para o subm&oacute;dulo adequado e garante a escrita correta no framebuffer.
+O módulo ULA é responsável por coordenar e aplicar os diferentes algoritmos de processamento de imagens disponíveis no projeto, ela atua como um seletor inteligente que direciona os dados lidos da ROM para o submódulo adequado (algoritmos) e garante a escrita correta no framebuffer. Abaixo, será explicado o seu funcionamento de forma detalhada:
 </p>
 
 <h3>Integração com os Demais Blocos</h3>
 <p>
-A <code>ULA</code> conecta diretamente a <strong>ROM</strong>, que fornece os pixels originais, com os diferentes
-<strong>submódulos de algoritmo</strong>. Cada submódulo aplica um tipo específico de transformação:
+A ULA conecta diretamente a ROM, que fornece os pixels originais, com os diferentes algoritmo do sistema. Cada um deles aplica um tipo específico de transformação e escreve seu resultado na RAM, é possivel ver abaixo todas as funcções disponívels no projeto (não muito detalhadas, dado que cada um dos algoritmos já foi explicado anteriormente):
 </p>
 <ul>
-  <li><code>rep_pixel</code>: realiza replicação por fatores de 2× ou 4×.</li>
-  <li><code>decimacao</code>: reduz a imagem por fatores de 2 ou 4, descartando pixels de forma controlada.</li>
-  <li><code>zoom_nn</code>: aplica zoom baseado no vizinho mais próximo, ampliando sem interpolação complexa.</li>
-  <li><code>media_blocos</code>: calcula a média em blocos, reduzindo a imagem com suavização.</li>
+  <li><code>rep_pixel</code>: algoritmo de realiza replicação por fatores de 2× ou 4×.</li>
+  <li><code>decimacao</code>: reduz a imagem por fatores de 2x ou 4x, descartando pixels de forma controlada.</li>
+  <li><code>zoom_nn</code>: aplica zoom baseado no vizinho mais próximo, ampliando sem interpolação complexa, podendo ser por 2x ou 4x</li>
+  <li><code>media_blocos</code>: calcula a média em blocos, reduzindo a imagem com suavização em fatores de 2x ou 4x</li>
   <li><code>copia_direta</code>: transfere os pixels sem modificação.</li>
 </ul>
 <p>
-O resultado de cada algoritmo é escrito na <strong>RAM dual-port</strong>, que funciona como framebuffer. Assim,
-o <strong>driver VGA</strong> pode ler continuamente os dados processados para exibir a imagem final. A seleção do algoritmo ativo é feita pela entrada <code>seletor</code>, enquanto a FSM interna garante que apenas um módulo seja habilitado por vez.
+Após aplicar toda a lógica, o resultado de cada algoritmo é escrito na RAM dual-port, que funciona como framebuffer. Assim, o driver VGA pode ler continuamente os dados processados para exibir a imagem final. A seleção do algoritmo ativo é feita pela entrada "seletor", que conversa com as chaves da placa, enquanto a FSM interna garante que apenas um módulo seja habilitado por vez.
 </p>
 
 <h3>Fluxo Operacional</h3>
+
 <p>
-O funcionamento da <code>ULA</code> segue uma sequência coordenada pela sua máquina de estados. Inicialmente, no estado
-<code>RESET</code>, todos os submódulos recebem um sinal de reset ativo-baixo e as saídas de controle são zeradas.
-A partir daí, a FSM verifica o valor da entrada <code>seletor</code> e direciona o fluxo para o estado correspondente ao algoritmo escolhido.
+O funcionamento da ULA é simples e direto, ela segue uma sequência coordenada pela sua máquina de estados. Inicialmente, configurada no estado RESET, onde todos os submódulos recebem um sinal de reset ativo-baixo e as saídas de controle são zeradas, garantindo que todas as vezes que um algoritmo específico for selecionado, os demais não interfiram na sua leitura. A partir daí, a FSM verifica o valor da entrada e direciona o fluxo para o estado correspondente ao algoritmo escolhido.
 </p>
+
 <p>
-Cada estado ativa somente o submódulo relacionado, mantendo os demais em reset. Por exemplo, em
-<code>ST_REPLICACAO</code>, o bloco <code>rep_pixel</code> é liberado, e seus sinais de endereço (<code>rom_addr</code> e <code>ram_wraddr</code>),
-dados de saída (<code>ram_data</code>) e controle (<code>ram_wren</code>, <code>done</code>) são conectados diretamente às saídas da ULA.
-Esse mesmo padrão se repete para decimação, zoom, média e cópia direta.
-</p>
-<p>
-Enquanto um submódulo processa, o sinal <code>done</code> indica quando a operação foi concluída. Caso o usuário altere o seletor durante o processamento, a FSM força um retorno ao estado <code>RESET</code>, garantindo a integridade dos dados e reinicializando corretamente o fluxo.
+Cada estado ativa somente o submódulo relacionado, mantendo os demais em reset. Por exemplo, no estado ST_REPLICACAO, o bloco rep_pixel é ativado, e os seus sinais de endereço (rom_addr e ram_wraddr), dados de saída (ram_data) e controle (ram_wren, done) são conectados diretamente às saídas da ULA. Esse mesmo padrão se repete para decimação, zoom, média e cópia direta. Para cada algoritmo, o sinal done indica quando a operação foi concluída. Caso o usuário altere o seletor durante o processamento, a FSM força um retorno ao estado RESET, garantindo a integridade dos dados e reinicializando corretamente o fluxo, com todas as entradas novamente limpas.
 </p>
 
 <h3>Exemplo de Operação</h3>
