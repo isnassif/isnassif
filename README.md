@@ -21,23 +21,21 @@ Me chamo Ikhlas Santos Nassif, tenho 19 anos e sou natural da Bahia. Concluí o 
     </a>
 </p>
 
-<h2 id="control">Unidade de Controle (Control Unity)</h2>
+<h2 id="control">Unidade de Controle</h2>
 <p>
-A Unidade de Controle, implementada no módulo <code>control_unity</code>, é o elemento top-level responsável por
-<strong>orquestrar o fluxo completo do sistema</strong>: desde a leitura sequencial da ROM, passando pela escolha e ativação
-dos algoritmos de redimensionamento, até a escrita ordenada no Framebuffer e exibição pelo driver VGA.
+A Unidade de Controle, é implementada no módulo control_unity e funciona como o elemento principal do projeto, ela é responsável por coordenar todo o fluxo do sistema, começando pela instanciação de todos os componentes principais, como as memórias ROM e RAM e a ALU, coordenação e geração do clock utilizado, sincronismo das chaves utilizadas, ativação dos algoritmos de redimensionamento e escrita ordenada no Framebuffer, com um resultado final exibido pelo driver VGA, a seguir, será explicado de forma detalhada e minunciosa o funcionamento de cada um dos componentes do módulo.
 </p>
 
 <h3>Funções Principais</h3>
 <ul>
   <li><strong>Geração e Distribuição de Clocks:</strong>  
-      Utiliza um PLL (<code>pll_0002</code>) para fornecer um clock estável aos blocos de memória e divide o clock de 50&nbsp;MHz para gerar o clock VGA de 25&nbsp;MHz.</li>
+      Através da ferramente "IP catalog", disponível na IDE Quartus (utiliada para o desenvolvimento do projeto), foi criado um PLL para fornecer um clock estável aos blocos de memória, o que fornece uma valor preciso para os módulos principais.</li>
   <li><strong>Sincronização de Entradas:</strong>  
-      As chaves (<code>sw[3:0]</code>) são sincronizadas em registradores para evitar metastabilidade. Esses sinais determinam o modo de operação (replicação, decimação, zoom por vizinho mais próximo ou cópia direta).</li>
+      As chaves sw são sincronizadas em registradores para evitar metastabilidade. Esses sinais determinam o modo de operação (replicação, decimação, zoom por vizinho mais próximo ou cópia direta).</li>
   <li><strong>Centralização e Endereçamento:</strong>  
-      Calcula dinamicamente <code>x_offset</code> e <code>y_offset</code> para centralizar a imagem na tela de 640×480, e gera o endereço do Framebuffer para cada pixel válido.</li>
+      Calcula dinamicamente x_offset e y_offset, sinais do vga_driver, para centralizar a imagem na tela de 640×480, utilizada para desenvolvimento do projeto, esses sinais, geram o endereço do Framebuffer para cada pixel válido.</li>
   <li><strong>Controle da FSM:</strong>  
-      A FSM do <code>control_unity</code> coordena a leitura de pixels da ROM, aciona o módulo de algoritmo selecionado e controla os sinais de escrita na RAM.</li>
+      A FSM do módulo de controle coordena a leitura de pixels da ROM, aciona o módulo de algoritmo selecionado e controla os sinais de escrita na RAM, permitindo com que o projeto funcione da melhor forma.</li>
 </ul>
 
 <h3>Fluxo Operacional</h3>
