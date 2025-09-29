@@ -21,63 +21,59 @@ Me chamo Ikhlas Santos Nassif, tenho 19 anos e sou natural da Bahia. Concluí o 
     </a>
 </p>
 
-<h2 id="control">Unidade de Controle</h2>
+<h2 id="ula">Unidade Lógica e Algorítmica (ULA)</h2>
 <p>
-A Unidade de Controle, é implementada no módulo control_unity e funciona como o elemento principal do projeto, ela é responsável por coordenar todo o fluxo do sistema, começando pela instanciação de todos os componentes principais, como as memórias ROM e RAM e a ALU, coordenação e geração do clock utilizado, sincronismo das chaves utilizadas, ativação dos algoritmos de redimensionamento e escrita ordenada no Framebuffer, com um resultado final exibido pelo driver VGA, a seguir, será explicado de forma detalhada e minunciosa o funcionamento de cada um dos componentes do módulo.
-</p>
-
-<h3>Funções Principais</h3>
-<ul>
-  <li><strong>Geração e Distribuição de Clocks:</strong>  
-      Através da ferramente "IP catalog", disponível na IDE Quartus (utiliada para o desenvolvimento do projeto), foi criado um PLL para fornecer um clock estável aos blocos de memória, o que fornece uma valor preciso para os módulos principais.</li>
-  <li><strong>Sincronização de Entradas:</strong>  
-      As chaves sw são sincronizadas em registradores para evitar metastabilidade. Esses sinais determinam o modo de operação (replicação, decimação, zoom por vizinho mais próximo ou cópia direta).</li>
-  <li><strong>Centralização e Endereçamento:</strong>  
-      Calcula dinamicamente x_offset e y_offset, sinais do vga_driver, para centralizar a imagem na tela de 640×480, utilizada para desenvolvimento do projeto, esses sinais, geram o endereço do Framebuffer para cada pixel válido.</li>
-  <li><strong>Controle da FSM:</strong>  
-      A FSM do módulo de controle coordena a leitura de pixels da ROM, aciona o módulo de algoritmo selecionado e controla os sinais de escrita na RAM, permitindo com que o projeto funcione da melhor forma.</li>
-</ul>
-
-<h3>Fluxo Operacional</h3>
-<p>
-    Nessa seção, falaremos sobre toda a parte operacional do funcionamento da Unidade de Controle, que segue uma sequência bem definida de etapas. Inicialmente, assim que o sinal vga_reset é acionado, o sistema entra no estado de RESET. Nesse momento, são realizados os ajustes iniciais, incluindo a configuração dos fatores de escala de acordo com a opção escolhida pelo usuário por meio das chaves de entrada. Com a configuração concluída, o sistema passa para a fase de leitura sequencial da ROM. Aqui, o endereço rom_addr é continuamente incrementado, percorrendo toda a imagem original armazenada, que possui resolução de 160×120 pixels. Cada pixel lido é então encaminhado para o módulo de algoritmo responsável pelo redimensionamento.
-</p>
-
-<p>
-    A etapa de redimensionamento é basicamente é o processamento do pixel pelo algoritmo selecionado, vale ressaltar que a escolha do modo de operação depende do código de controle gerado a partir das chaves. Assim, o pixel pode ser replicado, reduzido, interpolado ou simplesmente copiado de forma direta - Por exemplo, no modo de replicação ×2, cada pixel proveniente da ROM é expandido em quatro pixels consecutivos que serão gravados no framebuffer- Após o processamento, leitura e aplicação dos algoritmos, ocorre a escrita na RAM dual-port, que funciona como framebuffer. A posição de memória correta é calculada a partir do registrador de endereço addr_reg, levando em conta tanto a ampliação ou redução da imagem quanto os deslocamentos necessários para centralização. O sinal de controle ram_wren garante que a escrita ocorra apenas em ciclos válidos, evitando sobreposição ou perda de dados.
-</p>
-
-<p>
-    A unidade de controle também controla o módulo vga_drive, que será explicado posteriormente. Esse fluxo coordenado garante que cada etapa — desde a leitura da ROM até a exibição final pelo VGA — seja sincronizada e controlada pela Unidade de Controle, assegurando o funcionamento estável do sistema.
+O módulo <code>ULA</code> é responsável por integrar e coordenar diferentes algoritmos de processamento de imagens
+(replica&ccedil;&atilde;o, decima&ccedil;&atilde;o, zoom por vizinho mais pr&oacute;ximo, m&eacute;dia de blocos e c&oacute;pia direta),
+atuando como um seletor inteligente que direciona os dados lidos da ROM para o subm&oacute;dulo adequado e garante a escrita correta no framebuffer.
 </p>
 
 <h3>Integração com os Demais Blocos</h3>
 <p>
-A Unidade de Controle conecta e organiza todos os módulos do sistema:
+A <code>ULA</code> conecta diretamente a <strong>ROM</strong>, que fornece os pixels originais, com os diferentes
+<strong>submódulos de algoritmo</strong>. Cada submódulo aplica um tipo específico de transformação:
 </p>
 <ul>
-  <li><strong>ROM:</strong> fornece pixels originais.</li>
-  <li><strong>Módulos de Algoritmo:</strong> recebem dados e aplicam o redimensionamento.</li>
-  <li><strong>RAM (Framebuffer):</strong> armazena a imagem processada e serve de interface com o VGA.</li>
-  <li><strong>Driver VGA:</strong> exibe a imagem final centralizada na tela.</li>
+  <li><code>rep_pixel</code>: realiza replicação por fatores de 2× ou 4×.</li>
+  <li><code>decimacao</code>: reduz a imagem por fatores de 2 ou 4, descartando pixels de forma controlada.</li>
+  <li><code>zoom_nn</code>: aplica zoom baseado no vizinho mais próximo, ampliando sem interpolação complexa.</li>
+  <li><code>media_blocos</code>: calcula a média em blocos, reduzindo a imagem com suavização.</li>
+  <li><code>copia_direta</code>: transfere os pixels sem modificação.</li>
 </ul>
+<p>
+O resultado de cada algoritmo é escrito na <strong>RAM dual-port</strong>, que funciona como framebuffer. Assim,
+o <strong>driver VGA</strong> pode ler continuamente os dados processados para exibir a imagem final. A seleção do algoritmo ativo é feita pela entrada <code>seletor</code>, enquanto a FSM interna garante que apenas um módulo seja habilitado por vez.
+</p>
+
+<h3>Fluxo Operacional</h3>
+<p>
+O funcionamento da <code>ULA</code> segue uma sequência coordenada pela sua máquina de estados. Inicialmente, no estado
+<code>RESET</code>, todos os submódulos recebem um sinal de reset ativo-baixo e as saídas de controle são zeradas.
+A partir daí, a FSM verifica o valor da entrada <code>seletor</code> e direciona o fluxo para o estado correspondente ao algoritmo escolhido.
+</p>
+<p>
+Cada estado ativa somente o submódulo relacionado, mantendo os demais em reset. Por exemplo, em
+<code>ST_REPLICACAO</code>, o bloco <code>rep_pixel</code> é liberado, e seus sinais de endereço (<code>rom_addr</code> e <code>ram_wraddr</code>),
+dados de saída (<code>ram_data</code>) e controle (<code>ram_wren</code>, <code>done</code>) são conectados diretamente às saídas da ULA.
+Esse mesmo padrão se repete para decimação, zoom, média e cópia direta.
+</p>
+<p>
+Enquanto um submódulo processa, o sinal <code>done</code> indica quando a operação foi concluída. Caso o usuário altere o seletor durante o processamento, a FSM força um retorno ao estado <code>RESET</code>, garantindo a integridade dos dados e reinicializando corretamente o fluxo.
+</p>
 
 <h3>Exemplo de Operação</h3>
 <p>
-Suponha que o usuário selecione <code>sw = 4'b0000</code> (replicação ×2).  
-Nesse caso:
+Suponha que o usuário configure <code>seletor = 4'b0000</code>, escolhendo o modo de replicação ×2. Nesse caso,
+a FSM libera o bloco <code>rep_pixel</code> com fator 2. A cada pixel lido da ROM, o submódulo gera quatro pixels de saída
+em posições consecutivas da RAM. Esse processo continua até que todos os pixels sejam processados, momento em que
+<code>done</code> é ativado.
 </p>
-<ul>
-  <li>A Unidade de Controle configura <code>IMG_W_AMP = 320</code> e <code>IMG_H_AMP = 240</code>.</li>
-  <li>Os offsets são <code>x_offset = 160</code>, <code>y_offset = 120</code>, garantindo centralização.</li>
-  <li>Cada pixel da ROM é replicado em 4 posições consecutivas na RAM.</li>
-  <li>O VGA exibe uma imagem de 320×240 pixels centralizada em 640×480.</li>
-</ul>
-
-<h3>Pontos de Atenção</h3>
-<ul>
-  <li>O reset <code>vga_reset</code> é ativo em nível baixo: a documentação deve enfatizar esse detalhe para evitar erros.</li>
-  <li>Existe travessia de domínios de clock (<code>clk_vga</code> × <code>outclk_0</code>), devendo-se confirmar que a RAM e a ROM suportam operação dual-clock.</li>
-  <li>É importante debouncing das chaves (<code>sw</code>) para garantir estabilidade nas trocas de modo em tempo de execução.</li>
-</ul>
-
+<p>
+Se o usuário alterasse o seletor para <code>4'b0001</code> (decimação ×2), a FSM retornaria ao estado de reset,
+desabilitaria o módulo de replicação e ativaria o <code>decimacao</code>. A partir daí, apenas um a cada dois pixels seria
+escrito no framebuffer, reduzindo a imagem de maneira controlada.
+</p>
+<p>
+Esse comportamento padronizado, em que cada estado habilita exclusivamente o algoritmo correspondente, garante
+robustez ao sistema, permitindo que múltiplos modos de redimensionamento coexistam em um mesmo projeto sem conflito de sinais.
+</p>
