@@ -2,7 +2,7 @@
 
 **`Desenvolvedor Back-end`**
 
-Me chamo Ikhlas Santos Nassif, tenho 19 anos e sou natural da Bahia. Concluí o ensino médio no colégio Nobre, tenho também curso de inglês pelo CCAA. Atualmente, estou cursando Engenharia de Computação na UEFS. Sou proativo, dedicado, responsável e autônomo, conheça um pouco mais de mim pelo meu [Linkedin](https://www.linkedin.com/in/ikhlasnassif/).
+Olá! Me chamo Ikhlas Santos Nassif, tenho 20 anos e sou natural da Bahia. Sou estudande de Engenharia de Computação pela Universidade Estadual de Feira de Santana, atualmente estou no meu 5º semestre, tenho um inglês intermediário, com pontos fortes na fala e na escuta. Sou proativo, dedicado, responsável e autônomo, sempre precisei tomar o papel de protagonista na minha vida para atingir os meus objetivos, além disso, experiência prévia em metologia PBL e desenvolvimento de projetos eficientes (presentes aqui no github), moldam um perfil profissional e interessante. Conheça um pouco mais de mim pelo meu [Linkedin](https://www.linkedin.com/in/ikhlasnassif/).
 
 <p align="left">
     <a href="https://github.com/isnassif?tab=repositories&sort=stargazers">
